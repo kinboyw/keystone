@@ -84,6 +84,7 @@ const relationshipTokenizer = (listAdapter, queryKey, path, getUID = cuid) => {
           ? refListAdapter2._getModel(rel.tableName).collection.name
           : refListAdapter2.model.collection.name, // the collection name to join with
       thisTable: refListAdapter.key,
+      path: fieldAdapter.path,
       rel,
       filterType,
       uniqueField,

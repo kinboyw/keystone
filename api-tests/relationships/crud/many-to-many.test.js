@@ -258,7 +258,6 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
             `,
               });
               expect(errors).toBe(undefined);
-
               const { Company, Location } = await getCompanyAndLocation(
                 keystone,
                 data.createCompany.id,

@@ -92,17 +92,18 @@ class MongooseAdapter extends BaseKeystoneAdapter {
     );
   }
 
-  async _createAdjacencyTable({ left, tableName }) {
+  async _createAdjacencyTable({ left, tableName, columnNames }) {
     const schema = new this.mongoose.Schema({}, { ...DEFAULT_MODEL_SCHEMA_OPTIONS });
 
-    const dbAdapter = this;
-    const leftListAdapter = left.adapter.listAdapter;
-    const leftPkFa = leftListAdapter.getPrimaryKeyAdapter();
-    const leftFkPath = `${leftListAdapter.key}_${leftPkFa.path}`;
+    const columnKey = `${left.listKey}.${left.path}`;
+    // const dbAdapter = this;
+    // const leftListAdapter = left.adapter.listAdapter;
+    // const leftPkFa = leftListAdapter.getPrimaryKeyAdapter();
+    const leftFkPath = columnNames[columnKey].near;
 
-    const rightListAdapter = dbAdapter.getListAdapterByKey(left.adapter.refListKey);
-    const rightPkFa = rightListAdapter.getPrimaryKeyAdapter();
-    const rightFkPath = `${rightListAdapter.key}_${rightPkFa.path}`;
+    // const rightListAdapter = dbAdapter.getListAdapterByKey(left.adapter.refListKey);
+    // const rightPkFa = rightListAdapter.getPrimaryKeyAdapter();
+    const rightFkPath = columnNames[columnKey].far;
 
     schema.add({ [leftFkPath]: {} });
     schema.add({ [rightFkPath]: {} });
@@ -261,6 +262,8 @@ class MongooseListAdapter extends BaseListAdapter {
     return this.parentAdapter._manyModels[tableName];
   }
 
+  ////////// Mutations //////////
+
   async _unsetOneToOneValues(realData) {
     // If there's a 1:1 FK in the real data we need to go and
     // delete it from any other item;
@@ -272,11 +275,8 @@ class MongooseListAdapter extends BaseListAdapter {
           ({ value, adapter: { rel } }) =>
             rel.cardinality === '1:1' && rel.tableName === this.key && value !== null
         )
-        .map(({ value, adapter: { rel } }) =>
-          this._getModel(rel.tableName).updateOne(
-            { [rel.columnName]: value },
-            { [rel.columnName]: null }
-          )
+        .map(({ value, adapter: { rel: { tableName, columnName } } }) =>
+          this._setNullByValue({ tableName, columnName, value })
         )
     );
   }
@@ -295,10 +295,29 @@ class MongooseListAdapter extends BaseListAdapter {
     );
   }
 
-  ////////// Mutations //////////
+  _getNearFar(fieldAdapter) {
+    const { rel, path, listAdapter } = fieldAdapter;
+    const { columnNames } = rel;
+    const columnKey = `${listAdapter.key}.${path}`;
+    return columnNames[columnKey];
+  }
+
+  async _createSingle(realData) {
+    const item = (await this.model.create(realData)).toObject();
+
+    const itemId = item._id;
+    return { item, itemId };
+  }
+
+  async _setNullByValue({ tableName, columnName, value }) {
+    return this._getModel(tableName).updateMany(
+      { [columnName]: { $eq: value } },
+      { [columnName]: null }
+    );
+  }
 
   async _createOrUpdateField({ value, adapter, itemId }) {
-    const { tableName, columnName, cardinality, columnNames } = adapter.rel;
+    const { tableName, columnName, cardinality } = adapter.rel;
     // N:N - put it in the many table
     // 1:N - put it in the FK col of the other table
     // 1:1 - put it in the FK col of the other table
@@ -313,17 +332,15 @@ class MongooseListAdapter extends BaseListAdapter {
       const values = value; // Rename this because we have a many situation
       if (values.length) {
         if (cardinality === 'N:N') {
-          // FIXME: think about uniqueness of the pair of keys
-          const itemCol = columnNames[this.key].near;
-          const otherCol = columnNames[this.key].far;
+          const { near, far } = this._getNearFar(adapter);
           return (
             await this._getModel(tableName).create(
               values.map(id => ({
-                [itemCol]: mongoose.Types.ObjectId(itemId),
-                [otherCol]: mongoose.Types.ObjectId(id),
+                [near]: mongoose.Types.ObjectId(itemId),
+                [far]: mongoose.Types.ObjectId(id),
               }))
             )
-          ).map(x => x[otherCol]);
+          ).map(x => x[far]);
         } else {
           await this._getModel(tableName).updateMany(
             { _id: { $in: values } },
@@ -342,12 +359,13 @@ class MongooseListAdapter extends BaseListAdapter {
 
     // Unset any real 1:1 fields
     await this._unsetOneToOneValues(realData);
+
     // Insert the real data into the table
-    const item = (await this.model.create(realData)).toObject();
+    const { item, itemId } = await this._createSingle(realData);
 
     // For every non-real-field, update the corresponding FK/join table.
     const manyItem = await this._processNonRealFields(data, async ({ value, adapter }) =>
-      this._createOrUpdateField({ value, adapter, itemId: item._id })
+      this._createOrUpdateField({ value, adapter, itemId })
     );
 
     // This currently over-populates the returned item.
@@ -373,17 +391,23 @@ class MongooseListAdapter extends BaseListAdapter {
     );
 
     // For every many-field, update the many-table
-    await this._processNonRealFields(data, async ({ value: newValues, adapter }) => {
-      const { cardinality, columnName, tableName, columnNames } = adapter.rel;
+    await this._processNonRealFields(data, async ({ path, value: newValues, adapter }) => {
+      const { cardinality, columnName, tableName } = adapter.rel;
       let value;
       // Future task: Is there some way to combine the following three
       // operations into a single query?
 
       if (cardinality !== '1:1') {
         // Work out what we've currently got
-        const selectCol = cardinality === 'N:N' ? columnNames[this.key].far : '_id';
-        const matchCol = cardinality === 'N:N' ? columnNames[this.key].near : columnName;
-
+        let matchCol, selectCol;
+        if (cardinality === 'N:N') {
+          const { near, far } = this._getNearFar(adapter);
+          matchCol = near;
+          selectCol = far;
+        } else {
+          matchCol = columnName;
+          selectCol = '_id';
+        }
         const currentRefIds = (
           await this._getModel(tableName).aggregate([
             { $match: { [matchCol]: mongoose.Types.ObjectId(item.id) } },
@@ -391,17 +415,18 @@ class MongooseListAdapter extends BaseListAdapter {
         ).map(x => x[selectCol].toString());
 
         // Delete what needs to be deleted
-        const needsDelete = currentRefIds
-          .filter(x => !newValues.includes(x))
-          .map(id => mongoose.Types.ObjectId(id));
+        const needsDelete = currentRefIds.filter(x => !newValues.includes(x));
         if (needsDelete.length) {
           if (cardinality === 'N:N') {
             await this._getModel(tableName).deleteMany({
-              $and: [{ [matchCol]: { $eq: item._id } }, { [selectCol]: { $in: needsDelete } }],
+              $and: [
+                { [matchCol]: { $eq: item._id } },
+                { [selectCol]: { $in: needsDelete.map(id => mongoose.Types.ObjectId(id)) } },
+              ],
             });
           } else {
             await this._getModel(tableName).updateMany(
-              { [selectCol]: { $in: needsDelete } },
+              { [selectCol]: { $in: needsDelete.map(id => mongoose.Types.ObjectId(id)) } },
               { [columnName]: null }
             );
           }
@@ -411,10 +436,8 @@ class MongooseListAdapter extends BaseListAdapter {
         // If there are values, update the other side to point to me,
         // otherwise, delete the thing that was pointing to me
         if (newValues === null) {
-          return this._getModel(tableName).updateOne(
-            { [columnName]: item.id }, // Is this right?!?!
-            { [columnName]: null }
-          );
+          const selectCol = columnName === path ? '_id' : columnName;
+          await this._setNullByValue({ tableName, columnName: selectCol, value: item.id });
         }
         value = newValues;
       }
@@ -427,7 +450,7 @@ class MongooseListAdapter extends BaseListAdapter {
     id = mongoose.Types.ObjectId(id);
     // Traverse all other lists and remove references to this item
     // We can't just traverse our own fields, because we might have been
-    // a silent partner in a relationship, so we have know self-knowledge of it.
+    // a silent partner in a relationship, so we have no self-knowledge of it.
     await Promise.all(
       Object.values(this.parentAdapter.listAdapters).map(adapter =>
         Promise.all(
@@ -438,27 +461,29 @@ class MongooseListAdapter extends BaseListAdapter {
                 a.refListKey === this.key &&
                 this._getModel(a.rel.tableName) !== this.model
             ) // If I (a list adapter) an implicated in the .rel of this field adapter
-            .map(({ rel }) => {
-              const { cardinality, columnName, tableName, columnNames } = rel;
-              if (cardinality === '1:1') {
-                return this._getModel(tableName).updateMany(
-                  { [columnName]: { $eq: id } },
-                  { [columnName]: null }
-                );
-              } else if (cardinality === 'N:N') {
-                return this._getModel(tableName).deleteMany({
-                  [columnNames[this.key].near]: { $eq: id },
-                });
+            .map(fieldAdapter => {
+              const { cardinality, columnName, tableName } = fieldAdapter.rel;
+              if (cardinality === 'N:N') {
+                // FIXME: There is a User <-> User case which isn't captured here.
+                const { near } = this._getNearFar(fieldAdapter);
+                return this._getModel(tableName).deleteMany({ [near]: { $eq: id } });
               } else {
-                return this._getModel(tableName).updateMany(
-                  { [columnName]: { $eq: id } },
-                  { [columnName]: null }
-                );
+                return this._setNullByValue({ tableName, columnName, value: id });
               }
             })
         )
       )
     );
+
+    // Now traverse all self-referential relationships and sort them right out.
+    await Promise.all(
+      this.rels
+        .filter(({ tableName }) => tableName === this.key)
+        .map(({ columnName, tableName }) =>
+          this._setNullByValue({ tableName, columnName, value: id })
+        )
+    );
+
     // Delete the actual item
     return this.model.deleteOne({ _id: id }).then(result => result.deletedCount);
   }
@@ -481,12 +506,20 @@ class MongooseListAdapter extends BaseListAdapter {
       const { cardinality, tableName, columnName, columnNames } = rel;
       let ids = [];
       if (cardinality === 'N:N') {
+        const a = from.fromList.adapter.fieldAdaptersByPath[from.fromField];
+        const columnKey = `${from.fromList.adapter.key}.${a.path}`;
+        // console.log({ columnKey, columnNames });
+        // console.log({ [columnNames[columnKey].near]: { $eq: mongoose.Types.ObjectId(from.fromId) } });
         ids = await this._getModel(tableName).aggregate([
           {
-            $match: { [columnNames[this.key].far]: { $eq: mongoose.Types.ObjectId(from.fromId) } },
+            $match: {
+              [columnNames[columnKey].near]: { $eq: mongoose.Types.ObjectId(from.fromId) },
+            },
           },
         ]);
-        ids = ids.map(x => x[columnNames[this.key].near]);
+        // console.log({ ids });
+        ids = ids.map(x => x[columnNames[columnKey].far]);
+        // console.log({ ids });
       } else {
         ids = await this._getModel(tableName).aggregate([
           { $match: { [columnName]: mongoose.Types.ObjectId(from.fromId) } },

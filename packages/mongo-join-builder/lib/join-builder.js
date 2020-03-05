@@ -53,7 +53,7 @@ const lookupStage = ({ from, as, targetKey, foreignKey, extraPipeline = [] }) =>
 });
 
 function relationshipPipeline(relationship) {
-  const { from, thisTable, rel, filterType, uniqueField } = relationship.relationshipInfo;
+  const { from, thisTable, path, rel, filterType, uniqueField } = relationship.relationshipInfo;
   const { cardinality, columnNames } = rel;
   const extraPipeline = pipelineBuilder(relationship);
   const extraField = `${uniqueField}_all`;
@@ -61,6 +61,7 @@ function relationshipPipeline(relationship) {
     // Perform a single FK join
     const targetKey = rel.tableName === thisTable ? rel.columnName : '_id';
     const foreignKey = rel.tableName === thisTable ? '_id' : rel.columnName;
+    // console.log({ from, targetKey, foreignKey });
     return [
       // Join against all the items which match the relationship filter condition
       lookupStage({ from, as: uniqueField, targetKey, foreignKey, extraPipeline }),
@@ -70,18 +71,19 @@ function relationshipPipeline(relationship) {
   } else {
     // Perform a pair of joins through the join table
     const { farCollection } = relationship.relationshipInfo;
+    const columnKey = `${thisTable}.${path}`;
     return [
       // Join against all the items which match the relationship filter condition
       lookupStage({
         from,
         as: uniqueField,
         targetKey: '_id',
-        foreignKey: columnNames[thisTable].near,
+        foreignKey: columnNames[columnKey].near,
         extraPipeline: [
           lookupStage({
             from: farCollection,
             as: `${uniqueField}_0`,
-            targetKey: columnNames[thisTable].far,
+            targetKey: columnNames[columnKey].far,
             foreignKey: '_id',
             extraPipeline,
           }),
@@ -94,12 +96,12 @@ function relationshipPipeline(relationship) {
           from,
           as: extraField,
           targetKey: '_id',
-          foreignKey: columnNames[thisTable].near,
+          foreignKey: columnNames[columnKey].near,
           extraPipeline: [
             lookupStage({
               from: farCollection,
               as: `${uniqueField}_0`,
-              targetKey: columnNames[thisTable].far,
+              targetKey: columnNames[columnKey].far,
               foreignKey: '_id',
             }),
           ],

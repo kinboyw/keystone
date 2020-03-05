@@ -82,7 +82,7 @@ const createReadData = async keystone => {
       [], //  ->  (E1) -> []
     ].map(async (locationIdxs, j) => {
       const ids = locationIdxs.map(i => ({ id: createUsers[i].id }));
-      const { data, errors } = await graphqlRequest({
+      const { data } = await graphqlRequest({
         keystone,
         query: `mutation update($friends: [UserWhereUniqueInput], $user: ID!) { updateUser(id: $user data: {
     friends: { connect: $friends }
