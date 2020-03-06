@@ -120,7 +120,7 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
 
     [
       [createListsLR, 'Left -> Right'],
-      // [createListsRL, 'Right -> Left'],
+      [createListsRL, 'Right -> Left'],
     ].forEach(([createLists, order]) => {
       describe(`One-to-many relationships - ${order}`, () => {
         function setupKeystone(adapterName) {
@@ -131,7 +131,7 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
           });
         }
 
-        describe.only('Read', () => {
+        describe('Read', () => {
           test(
             'one',
             runner(setupKeystone, async ({ keystone }) => {
@@ -152,16 +152,16 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
               );
             })
           );
-          test.only(
+          test(
             '_some',
             runner(setupKeystone, async ({ keystone }) => {
               await createReadData(keystone);
               await Promise.all(
                 [
                   ['A', 2],
-                  // ['B', 2],
-                  // ['C', 2],
-                  // ['D', 0],
+                  ['B', 2],
+                  ['C', 2],
+                  ['D', 0],
                 ].map(async ([name, count]) => {
                   const { data } = await graphqlRequest({
                     keystone,

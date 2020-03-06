@@ -59,9 +59,15 @@ function relationshipPipeline(relationship) {
   const extraField = `${uniqueField}_all`;
   if (cardinality === '1:N' || cardinality === 'N:1') {
     // Perform a single FK join
-    const targetKey = rel.tableName === thisTable ? rel.columnName : '_id';
-    const foreignKey = rel.tableName === thisTable ? '_id' : rel.columnName;
-    // console.log({ from, targetKey, foreignKey });
+    let targetKey, foreignKey;
+    // FIXME: I feel like the logic here could use some revie
+    if (filterType !== 'only' && rel.right && rel.left.listKey === rel.right.listKey) {
+      targetKey = '_id';
+      foreignKey = rel.columnName;
+    } else {
+      targetKey = rel.tableName === thisTable ? rel.columnName : '_id';
+      foreignKey = rel.tableName === thisTable ? '_id' : rel.columnName;
+    }
     return [
       // Join against all the items which match the relationship filter condition
       lookupStage({ from, as: uniqueField, targetKey, foreignKey, extraPipeline }),
