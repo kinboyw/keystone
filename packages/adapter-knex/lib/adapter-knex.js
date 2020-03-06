@@ -499,10 +499,10 @@ class KnexListAdapter extends BaseListAdapter {
               const { cardinality, columnName, tableName } = fieldAdapter.rel;
               if (cardinality === 'N:N') {
                 // FIXME: There is a User <-> User case which isn't captured here.
-                const { near } = this._getNearFar(fieldAdapter);
+                const { far } = this._getNearFar(fieldAdapter);
                 return this._query()
                   .table(tableName)
-                  .where(near, id)
+                  .where(far, id)
                   .del();
               } else {
                 return this._setNullByValue({ tableName, columnName, value: id });
