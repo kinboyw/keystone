@@ -378,10 +378,6 @@ class KnexListAdapter extends BaseListAdapter {
             .insert(values.map(id => ({ [near]: itemId, [far]: id })))
             .into(tableName)
             .returning(far);
-
-
-
-
         } else {
           return this._query()
             .table(tableName)

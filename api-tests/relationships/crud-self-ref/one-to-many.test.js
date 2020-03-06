@@ -231,9 +231,7 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
             `,
               });
               expect(errors).toBe(undefined);
-              expect(data.createUser.friends.map(({ id }) => id.toString())).toEqual([
-                user.id,
-              ]);
+              expect(data.createUser.friends.map(({ id }) => id.toString())).toEqual([user.id]);
 
               const { User, Friend } = await getUserAndFriend(
                 keystone,
@@ -242,9 +240,7 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
               );
 
               // Everything should now be connected
-              expect(data.createUser.friends.map(({ id }) => id.toString())).toEqual([
-                user.id,
-              ]);
+              expect(data.createUser.friends.map(({ id }) => id.toString())).toEqual([user.id]);
               expect(Friend.friendOf.id.toString()).toBe(User.id.toString());
             })
           );
@@ -272,9 +268,7 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
               );
 
               // Everything should now be connected
-              expect(User.friends.map(({ id }) => id.toString())).toEqual([
-                Friend.id.toString(),
-              ]);
+              expect(User.friends.map(({ id }) => id.toString())).toEqual([Friend.id.toString()]);
               expect(Friend.friendOf.id.toString()).toBe(User.id.toString());
             })
           );
@@ -316,9 +310,9 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
               });
 
               // The nested company should not have a location
-              expect(
-                allUsers.filter(({ id }) => id === User.id)[0].friends[0].friendOf.id
-              ).toEqual(User.id);
+              expect(allUsers.filter(({ id }) => id === User.id)[0].friends[0].friendOf.id).toEqual(
+                User.id
+              );
               allUsers
                 .filter(({ id }) => id !== User.id)
                 .forEach(user => {
@@ -361,9 +355,9 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
                 keystone,
                 query: `{ allUsers { id friends { id friendOf { id } } } }`,
               });
-              expect(
-                allUsers.filter(({ id }) => id === User.id)[0].friends[0].friendOf.id
-              ).toEqual(User.id);
+              expect(allUsers.filter(({ id }) => id === User.id)[0].friends[0].friendOf.id).toEqual(
+                User.id
+              );
               allUsers
                 .filter(({ id }) => id !== User.id)
                 .forEach(user => {
