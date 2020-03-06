@@ -535,7 +535,6 @@ class KnexListAdapter extends BaseListAdapter {
   ////////// Queries //////////
 
   async _itemsQuery(args, { meta = false, from = {} } = {}) {
-
     const query = new QueryBuilder(this, args, { meta, from }).get();
     const results = await query;
 
@@ -780,6 +779,8 @@ class QueryBuilder {
             subQuery
               .select(`${subBaseTableAlias}.${columnName}`)
               .from(`${tableName} as ${subBaseTableAlias}`);
+            // We need to filter out nulls before passing back to the top level query
+            // otherwise postgres will give very incorrect answers.
             subQuery.whereNotNull(columnName);
           } else {
             // console.log('3.d.ii N:N');
@@ -816,13 +817,6 @@ class QueryBuilder {
               otherTableAlias
             );
           }
-          // We need to filter out nulls before passing back to the top level query
-          // otherwise postgres will give very incorrect answers.
-
-          // FIXME: Think about whether this makes any sense at all or whether it
-          // only applies to some of our conditions...?
-          // Only applies sometimes, it would seem,,,
-          // subQuery.whereNotNull(columnName);
 
           if (constraintType === 'some') {
             whereJoiner(q => q.whereIn(`${tableAlias}.id`, subQuery));
