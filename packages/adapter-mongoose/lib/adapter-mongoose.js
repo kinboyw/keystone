@@ -96,13 +96,8 @@ class MongooseAdapter extends BaseKeystoneAdapter {
     const schema = new this.mongoose.Schema({}, { ...DEFAULT_MODEL_SCHEMA_OPTIONS });
 
     const columnKey = `${left.listKey}.${left.path}`;
-    // const dbAdapter = this;
-    // const leftListAdapter = left.adapter.listAdapter;
-    // const leftPkFa = leftListAdapter.getPrimaryKeyAdapter();
     const leftFkPath = columnNames[columnKey].near;
 
-    // const rightListAdapter = dbAdapter.getListAdapterByKey(left.adapter.refListKey);
-    // const rightPkFa = rightListAdapter.getPrimaryKeyAdapter();
     const rightFkPath = columnNames[columnKey].far;
 
     schema.add({ [leftFkPath]: {} });
@@ -203,9 +198,7 @@ class MongooseListAdapter extends BaseListAdapter {
     this.realKeys = [];
   }
 
-  prepareFieldAdapter() {
-    // fieldAdapter.addToMongooseSchema(this.schema, this.mongoose, this.rels);
-  }
+  prepareFieldAdapter() {}
 
   /**
    * Note: It's not necessary to await the result of this function - it is only
