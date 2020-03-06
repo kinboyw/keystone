@@ -278,11 +278,12 @@ describe('join builder', () => {
               relationshipInfo: {
                 from: 'posts_tags',
                 uniqueField: 'def456_tags',
+                path: 'tags',
                 rel: {
                   cardinality: 'N:N',
                   columnNames: {
-                    Post: { near: 'Post_id', far: 'Tag_id' },
-                    Tag: { near: 'Tag_id', far: 'Post_id' },
+                    'Post.tags': { near: 'Post_id', far: 'Tag_id' },
+                    'Tag.posts': { near: 'Tag_id', far: 'Post_id' },
                   },
                 },
                 thisTable: 'Post',
@@ -297,11 +298,12 @@ describe('join builder', () => {
                   relationshipInfo: {
                     from: 'posts_tags',
                     uniqueField: 'xyz890_posts',
+                    path: 'posts',
                     rel: {
                       cardinality: 'N:N',
                       columnNames: {
-                        Post: { near: 'Post_id', far: 'Tag_id' },
-                        Tag: { near: 'Tag_id', far: 'Post_id' },
+                        'Post.tags': { near: 'Post_id', far: 'Tag_id' },
+                        'Tag.posts': { near: 'Tag_id', far: 'Post_id' },
                       },
                       tableName: 'Posts_Tags',
                     },
@@ -488,11 +490,12 @@ describe('join builder', () => {
               relationshipInfo: {
                 from: 'posts_labels',
                 uniqueField: 'quux987_labels',
+                path: 'labels',
                 rel: {
                   cardinality: 'N:N',
                   columnNames: {
-                    Post: { near: 'Post_id', far: 'Label_id' },
-                    Label: { near: 'Label_id', far: 'Post_id' },
+                    'Post.labels': { near: 'Post_id', far: 'Label_id' },
+                    'Label.posts': { near: 'Label_id', far: 'Post_id' },
                   },
                 },
                 thisTable: 'Post',
@@ -623,11 +626,12 @@ describe('join builder', () => {
               relationshipInfo: {
                 from: 'posts_labels',
                 uniqueField: 'quux987_labels',
+                path: 'labels',
                 rel: {
                   cardinality: 'N:N',
                   columnNames: {
-                    Post: { near: 'Post_id', far: 'Label_id' },
-                    Label: { near: 'Label_id', far: 'Post_id' },
+                    'Post.labels': { near: 'Post_id', far: 'Label_id' },
+                    'Label.posts': { near: 'Label_id', far: 'Post_id' },
                   },
                 },
                 thisTable: 'Post',
@@ -759,11 +763,12 @@ describe('join builder', () => {
               relationshipInfo: {
                 from: 'posts_labels',
                 uniqueField: 'quux987_labels',
+                path: 'labels',
                 rel: {
                   cardinality: 'N:N',
                   columnNames: {
-                    Post: { near: 'Post_id', far: 'Label_id' },
-                    Label: { near: 'Label_id', far: 'Post_id' },
+                    'Post.labels': { near: 'Post_id', far: 'Label_id' },
+                    'Label.posts': { near: 'Label_id', far: 'Post_id' },
                   },
                 },
                 thisTable: 'Post',
@@ -898,11 +903,12 @@ describe('join builder', () => {
               relationshipInfo: {
                 from: 'posts_labels',
                 uniqueField: 'quux987_labels',
+                path: 'labels',
                 rel: {
                   cardinality: 'N:N',
                   columnNames: {
-                    Post: { near: 'Post_id', far: 'Label_id' },
-                    Label: { near: 'Label_id', far: 'Post_id' },
+                    'Post.labels': { near: 'Post_id', far: 'Label_id' },
+                    'Label.posts': { near: 'Label_id', far: 'Post_id' },
                   },
                 },
                 thisTable: 'Post',

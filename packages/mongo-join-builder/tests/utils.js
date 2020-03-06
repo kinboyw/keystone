@@ -33,8 +33,8 @@ const postsAdapter = {
       rel: {
         cardinality: 'N:N',
         columnNames: {
-          Tag: { near: 'Tag_id', far: 'Post_id' },
-          Post: { near: 'Post_id', far: 'Tag_id' },
+          'Tag.posts': { near: 'Tag_id', far: 'Post_id' },
+          'Post.tags': { near: 'Post_id', far: 'Tag_id' },
         },
         collectionName: 'posts_tags',
       },
@@ -106,8 +106,8 @@ tagsAdapter.fieldAdapters.push({
   rel: {
     cardinality: 'N:N',
     columnNames: {
-      Tag: { near: 'Tag_id', far: 'Post_id' },
-      Post: { near: 'Post_id', far: 'Tag_id' },
+      'Tag.posts': { near: 'Tag_id', far: 'Post_id' },
+      'Post.tags': { near: 'Post_id', far: 'Tag_id' },
     },
     collectionName: 'posts_tags',
   },
