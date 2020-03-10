@@ -1,5 +1,17 @@
 # @keystonejs/field-content
 
+## 5.4.3
+
+### Patch Changes
+
+- Updated dependencies [[`0de5f232`](https://github.com/keystonejs/keystone/commit/0de5f2321ef8f9fe6dd247c3201372a4156e61e9)]:
+  - @arch-ui/theme@0.0.10
+  - @arch-ui/fields@2.1.4
+  - @arch-ui/input@0.1.7
+  - @arch-ui/tooltip@0.1.9
+  - @arch-ui/typography@0.0.15
+  - @keystonejs/fields@6.3.3
+
 ## 5.4.2
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # keystone_demo_blog
 
+## 5.2.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @keystonejs/app-admin-ui@5.9.2
+  - @arch-ui/layout@0.2.11
+  - @arch-ui/typography@0.0.15
+  - @keystonejs/fields@6.3.3
+  - @keystonejs/fields-markdown@5.1.3
+  - @keystonejs/fields-wysiwyg-tinymce@5.2.1
+
 ## 5.2.2
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @keystonejs/demo-project-meetup
 
+## 5.1.3
+
+### Patch Changes
+
+- [`916e862a`](https://github.com/keystonejs/keystone/commit/916e862a19a4f1c858abd0e76195103228d33678) [#2324](https://github.com/keystonejs/keystone/pull/2324) Thanks [@Vultraz](https://github.com/Vultraz)! - Updated Meetup demo to use Apollo hooks.
+
+- Updated dependencies []:
+  - @keystonejs/app-admin-ui@5.9.2
+  - @keystonejs/fields@6.3.3
+  - @keystonejs/fields-wysiwyg-tinymce@5.2.1
+
 ## 5.1.2
 
 ### Patch Changes
